@@ -1,0 +1,33 @@
+name: SharkEconomy
+version: '1.0'
+main: org.sharkconomy.sharkEconomy
+api-version: '1.21'
+commands:
+  economy:
+    description: Main economy command.
+    usage: /economy <subcommand>
+    permission: economy.use
+    aliases: [ eco ]
+
+permissions:
+  economy.use:
+    description: Allows using the economy commands
+    default: true  # All players can use this by default
+  economy.pay:
+    description: Allows paying other players
+    default: true
+  economy.balance:
+    description: Allows checking balance
+    default: true
+  economy.leaderboard:
+    description: Allows viewing leaderboard
+    default: true
+  economy.help:
+    description: Allows seeking help
+    default: true
+  economy.deposit:
+    description: Allows depositing
+    default: true
+  economy.withdraw:
+    description: Allows Withdrawing
+    default: true
