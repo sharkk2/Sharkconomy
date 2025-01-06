@@ -11,7 +11,7 @@ public final class sharkEconomy extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        getLogger().info("HELLO NIGGERS THIS IS SHARKK2");
+        getLogger().info("HELLO FROM SHARKCONOMY");
         getCommand("economy").setExecutor(new EconomyCommand());
         getCommand("economy").setTabCompleter(new EconomyTabCompleter());
         getServer().getPluginManager().registerEvents(new playerJoin(), this);
