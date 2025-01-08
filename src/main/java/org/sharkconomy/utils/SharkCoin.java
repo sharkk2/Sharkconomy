@@ -13,13 +13,12 @@ public class SharkCoin {
 
         ItemMeta meta = sharkCoin.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(ChatColor.GOLD + "SharkCoin");
+            meta.setDisplayName(ChatColor.GOLD + "Sharcoin");
 
             meta.setUnbreakable(true);
             meta.setEnchantmentGlintOverride(true);
 
-            // Prevent item stacking with regular prismarine shards
-            meta.setCustomModelData(1); // Makes it unique if you use resource packs or data packs
+            meta.setCustomModelData(1);
         }
 
         sharkCoin.setItemMeta(meta);
@@ -38,7 +37,7 @@ public class SharkCoin {
         for (ItemStack item : player.getInventory().getContents()) {
             if (item != null && item.getType() == Material.PRISMARINE_SHARD) {
                 ItemMeta meta = item.getItemMeta();
-                if (meta != null && meta.getDisplayName().equals(ChatColor.GOLD + "SharkCoin") &&
+                if (meta != null && meta.getDisplayName().equals(ChatColor.GOLD + "Sharcoin") &&
                         meta.hasCustomModelData() && meta.getCustomModelData() == 1) {
 
                     int stackAmount = item.getAmount();
