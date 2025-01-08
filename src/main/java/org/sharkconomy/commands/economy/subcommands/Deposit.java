@@ -8,17 +8,22 @@ import org.sharkconomy.utils.SharkCoin;
 public class Deposit {
     public void execute(Player player, String[] args) {
         try {
+            if (args.length != 2) {
+                player.sendMessage(ChatColor.RED + "Usage: /economy deposit <amount>");
+                return;
+            }
+
             double amount = Double.parseDouble(args[1]);
 
             if (amount <= 0) {
-                player.sendMessage(ChatColor.RED + "You cant deposit less than 1 SharkCoin!");
+                player.sendMessage(ChatColor.RED + "You cant deposit less than 1 Sharcoin!");
                 return;
             }
             int intamount = (int) Math.round(amount);
             boolean taken = SharkCoin.takeCoin(player, intamount);
 
             if (!taken) {
-                player.sendMessage(ChatColor.RED + "You don't have enough SharkCoins in your inventory!");
+                player.sendMessage(ChatColor.RED + "You don't have enough Sharcoins in your inventory!");
                 return;
             }
 
