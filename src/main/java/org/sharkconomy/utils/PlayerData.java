@@ -4,9 +4,13 @@ import com.google.gson.*;
 import org.bukkit.entity.Player;
 import org.sharkconomy.sharkEconomy;
 import org.bukkit.Sound;
-import java.util.*;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.enchantments.Enchantment;
+
 import java.io.*;
-import java.util.UUID;
+import java.util.*;
 
 public class PlayerData {
     private static final File dataFile = new File(sharkEconomy.getInstance().getServer().getWorldContainer(), "sharkeconomy.json");
@@ -48,16 +52,27 @@ public class PlayerData {
         data = loadData();
     }
 
-    public static double getBalance(UUID playerUUID) {
+    public static JsonObject getPlayerData(UUID playerUUID) {
         reloadData();
-        if (data.has(playerUUID.toString())) {
-            return data.get(playerUUID.toString()).getAsDouble();
+        if (!data.has(playerUUID.toString())) {
+            JsonObject playerData = new JsonObject();
+            playerData.addProperty("balance", 0);
+            playerData.add("shop", new JsonObject());
+            data.add(playerUUID.toString(), playerData);
+            saveData();
+            return playerData;
         }
-        return 0;
+        return data.getAsJsonObject(playerUUID.toString());
+    }
+
+    public static double getBalance(UUID playerUUID) {
+        JsonObject playerData = getPlayerData(playerUUID);
+        return playerData.get("balance").getAsDouble();
     }
 
     public static void setBalance(UUID playerUUID, double balance) {
-        data.addProperty(playerUUID.toString(), balance);
+        JsonObject playerData = getPlayerData(playerUUID);
+        playerData.addProperty("balance", balance);
         saveData();
     }
 
@@ -71,7 +86,8 @@ public class PlayerData {
         for (String key : data.keySet()) {
             try {
                 UUID uuid = UUID.fromString(key);
-                double balance = data.get(key).getAsDouble();
+                JsonObject playerData = data.getAsJsonObject(key);
+                double balance = playerData.get("balance").getAsDouble();
                 balances.put(uuid, balance);
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
@@ -80,18 +96,110 @@ public class PlayerData {
         return balances;
     }
 
+
+    public static boolean addItemToShop(UUID playerUUID, String itemName, int quantity, int price) {
+        JsonObject playerData = getPlayerData(playerUUID);
+        JsonObject shop = playerData.getAsJsonObject("shop");
+
+
+        JsonObject itemData = new JsonObject();
+        itemData.addProperty("quantity", quantity);
+        itemData.addProperty("price", price);
+        shop.add(itemName, itemData);
+        saveData();
+        return true;
+
+    }
+
+
+    public static JsonObject getShop(UUID playerUUID) {
+        JsonObject playerData = getPlayerData(playerUUID);
+        return playerData.getAsJsonObject("shop");
+    }
+
+    public static boolean hasItem(UUID playerUUID, String itemName) {
+        JsonObject shop = getShop(playerUUID);
+        return shop.has(itemName);
+    }
+
+    public static int totalItems(UUID playerUUID) {
+        JsonObject shop = getShop(playerUUID);
+        return shop.size();
+    }
+
+    public static void removeItem(UUID playerUUID, String itemName) {
+        JsonObject playerData = getPlayerData(playerUUID);
+        JsonObject shop = playerData.getAsJsonObject("shop");
+        if (shop.has(itemName)) {
+            shop.remove(itemName);
+            saveData();
+        }
+    }
+
+    public static boolean decreaseItemQuantity(UUID playerUUID, String itemName, int quantity) {
+        JsonObject playerData = getPlayerData(playerUUID);
+        JsonObject shop = playerData.getAsJsonObject("shop");
+
+        if (shop.has(itemName)) {
+            JsonObject itemData = shop.getAsJsonObject(itemName);
+            int currentQuantity = itemData.get("quantity").getAsInt();
+
+            if (currentQuantity >= quantity) {
+                itemData.addProperty("quantity", currentQuantity - quantity);
+                if (currentQuantity - quantity == 0) {
+                    shop.remove(itemName);
+                }
+                saveData();
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean addItemQuantity(UUID playerUUID, String itemName, int quantity) {
+        JsonObject playerData = getPlayerData(playerUUID);
+        JsonObject shop = playerData.getAsJsonObject("shop");
+
+        if (shop.has(itemName)) {
+            JsonObject itemData = shop.getAsJsonObject(itemName);
+            int currentQuantity = itemData.get("quantity").getAsInt();
+
+            itemData.addProperty("quantity", currentQuantity + quantity);  // Decrease the quantity
+            saveData();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean editPrice(UUID playerUUID, String itemName, int price) {
+        JsonObject playerData = getPlayerData(playerUUID);
+        JsonObject shop = playerData.getAsJsonObject("shop");
+
+        if (shop.has(itemName)) {
+            JsonObject itemData = shop.getAsJsonObject(itemName);
+
+            itemData.addProperty("price", price);
+            saveData();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+
     public static void giveStartingBalance(Player player) {
         if (isFirstTime(player.getUniqueId())) {
             int start = 100;
-            if (player.getName() == "mrclixy") {
-                start = 1;
-            }
-            setBalance(player.getUniqueId(), 100); // Give 100 Shark Bucks (SC)
-            player.sendMessage("§l§2Welcome to SharkSMP S3!!§r §8§7Your current bank balance is §6§l100SC (shark coins)§r§7\n" +
+            setBalance(player.getUniqueId(), start);
+            player.sendMessage("§l§2Welcome to SharkSMP S3!!§r §8§7Your current bank balance is §6§l" + start + "SC (sharcoins)§r§7\n" +
                     "Spend them wisely, You can do services for players, sell items, etc for more SC.\n" +
                     "Beware of scams and have fun! §b§o(plugin by sharkk2)");
             player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
-
         }
     }
 }
