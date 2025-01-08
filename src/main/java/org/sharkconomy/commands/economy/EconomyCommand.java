@@ -1,5 +1,6 @@
 package org.sharkconomy.commands.economy;
 
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -19,7 +20,7 @@ public class EconomyCommand implements CommandExecutor {
         Player player = (Player) sender;
 
         if (args.length == 0) {
-            player.sendMessage("Usage: /economy <subcommand>");
+            player.sendMessage(ChatColor.RED + "Usage: /economy <subcommand>");
             return false;
         }
 
@@ -42,9 +43,15 @@ public class EconomyCommand implements CommandExecutor {
             case "leaderboard":
                 new Leaderboard().execute(player, args);
                 break;
+            case "sell":
+                new Sell().execute(player, args);
+                break;
+            case "buy":
+                new Buy().execute(player, args);
+                break;
 
             default:
-                player.sendMessage("Unknown subcommand");
+                player.sendMessage(ChatColor.RED + "Unknown subcommand");
                 break;
         }
         return true;
