@@ -1,4 +1,4 @@
-# Sharkconomy
+# Sharkonomy
 
 A simple lightweight paper plugin for an economy system with the following commands
 
