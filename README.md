@@ -1,6 +1,6 @@
 # Sharkonomy
 
-A simple lightweight paper plugin for an economy system with the following commands
+A simple lightweight 1.21.1 paper plugin for an economy system with the following commands
 
 1. /economy help
 2. /economy balance
