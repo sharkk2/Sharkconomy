@@ -9,6 +9,10 @@ public class playerJoin implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        PlayerData.giveStartingBalance(event.getPlayer());
+
+        if (!PlayerData.giveStartingBalance(event.getPlayer())) {
+            PlayerData.giveDaily(event.getPlayer().getUniqueId());
+        }
+
     }
 }
