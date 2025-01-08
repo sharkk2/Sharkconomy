@@ -8,3 +8,5 @@ A simple lightweight paper plugin for an economy system with the following comma
 4. /economy withdraw
 5. /economy pay
 6. /economy leaderboard
+7. /economy sell
+8. /economy buy
