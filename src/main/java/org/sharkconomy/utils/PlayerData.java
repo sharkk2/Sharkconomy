@@ -1,13 +1,10 @@
 package org.sharkconomy.utils;
 
 import com.google.gson.*;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.sharkconomy.sharkEconomy;
 import org.bukkit.Sound;
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.EnchantmentStorageMeta;
-import org.bukkit.enchantments.Enchantment;
 
 import java.io.*;
 import java.util.*;
@@ -40,7 +37,8 @@ public class PlayerData {
         return new JsonObject();
     }
 
-    private static void saveData() {
+    private static void saveData(UUID playerUUID, JsonObject playerData) {
+        data.add(playerUUID.toString(), playerData);
         try (FileWriter writer = new FileWriter(dataFile)) {
             new Gson().toJson(data, writer);
         } catch (IOException e) {
@@ -58,8 +56,12 @@ public class PlayerData {
             JsonObject playerData = new JsonObject();
             playerData.addProperty("balance", 0);
             playerData.add("shop", new JsonObject());
-            data.add(playerUUID.toString(), playerData);
-            saveData();
+            JsonObject dailyData = new JsonObject();
+            dailyData.addProperty("last_daily", System.currentTimeMillis());
+            dailyData.addProperty("extra", 0);
+            playerData.add("daily", dailyData);
+
+            saveData(playerUUID, playerData);
             return playerData;
         }
         return data.getAsJsonObject(playerUUID.toString());
@@ -73,7 +75,8 @@ public class PlayerData {
     public static void setBalance(UUID playerUUID, double balance) {
         JsonObject playerData = getPlayerData(playerUUID);
         playerData.addProperty("balance", balance);
-        saveData();
+        saveData(playerUUID, playerData);
+        Bukkit.getLogger().info("Updated balance for " + Bukkit.getOfflinePlayer(playerUUID).getName() + " To " + balance + "sc");
     }
 
     public static boolean isFirstTime(UUID playerUUID) {
@@ -106,7 +109,7 @@ public class PlayerData {
         itemData.addProperty("quantity", quantity);
         itemData.addProperty("price", price);
         shop.add(itemName, itemData);
-        saveData();
+        saveData(playerUUID, playerData);
         return true;
 
     }
@@ -132,7 +135,7 @@ public class PlayerData {
         JsonObject shop = playerData.getAsJsonObject("shop");
         if (shop.has(itemName)) {
             shop.remove(itemName);
-            saveData();
+            saveData(playerUUID, playerData);
         }
     }
 
@@ -149,7 +152,7 @@ public class PlayerData {
                 if (currentQuantity - quantity == 0) {
                     shop.remove(itemName);
                 }
-                saveData();
+                saveData(playerUUID, playerData);
                 return true;
             } else {
                 return false;
@@ -168,7 +171,7 @@ public class PlayerData {
             int currentQuantity = itemData.get("quantity").getAsInt();
 
             itemData.addProperty("quantity", currentQuantity + quantity);  // Decrease the quantity
-            saveData();
+            saveData(playerUUID, playerData);
             return true;
         } else {
             return false;
@@ -183,7 +186,7 @@ public class PlayerData {
             JsonObject itemData = shop.getAsJsonObject(itemName);
 
             itemData.addProperty("price", price);
-            saveData();
+            saveData(playerUUID, playerData);
             return true;
         } else {
             return false;
@@ -192,7 +195,7 @@ public class PlayerData {
 
 
 
-    public static void giveStartingBalance(Player player) {
+    public static boolean giveStartingBalance(Player player) {
         if (isFirstTime(player.getUniqueId())) {
             int start = 100;
             setBalance(player.getUniqueId(), start);
@@ -200,6 +203,42 @@ public class PlayerData {
                     "Spend them wisely, You can do services for players, sell items, etc for more SC.\n" +
                     "Beware of scams and have fun! §b§o(plugin by sharkk2)");
             player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+            return true;
         }
+        return false;
+    }
+
+
+    public static boolean giveDaily(UUID playerUUID) {
+        JsonObject playerData = getPlayerData(playerUUID);
+        JsonObject dailyData = playerData.getAsJsonObject("daily");
+
+        long currentTime = System.currentTimeMillis();
+        long lastDaily = dailyData.get("last_daily").getAsLong();
+        int extra = dailyData.get("extra").getAsInt();
+
+        if (currentTime - lastDaily >= 24 * 60 * 60 * 1000) {
+            double reward = 25 + extra;
+            playerData.addProperty("balance", getBalance(playerUUID) + reward); // its cuz when the setBalance is used and then we save the data, data saved by setBalance gets overwritten
+            dailyData.addProperty("last_daily", currentTime);
+
+            if (currentTime - lastDaily >= 48 * 60 * 60 * 1000) {
+                dailyData.addProperty("extra", 0);
+            } else {
+                dailyData.addProperty("extra", extra + 5);
+            }
+            playerData.add("daily", dailyData);
+            saveData(playerUUID, playerData);
+
+            Player player = Bukkit.getPlayer(playerUUID);
+            player.sendMessage(
+                    "You've earned §6" + reward +"sc§r for joining daily!\n" +
+                    "Keep the streak to earn more every day.\n" +
+                    "Your current streak: §b" + ((extra + 5) / 5) + " day(s)§r."
+            );
+            player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+            return true;
+        }
+        return false;
     }
 }
