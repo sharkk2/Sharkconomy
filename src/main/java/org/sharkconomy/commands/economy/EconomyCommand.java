@@ -49,6 +49,10 @@ public class EconomyCommand implements CommandExecutor {
             case "buy":
                 new Buy().execute(player, args);
                 break;
+            case "transactions":
+                new Transactions().execute(player, args);
+                break;
+
 
             default:
                 player.sendMessage(ChatColor.RED + "Unknown subcommand");
