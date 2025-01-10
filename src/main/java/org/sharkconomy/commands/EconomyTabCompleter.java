@@ -31,6 +31,7 @@ public class EconomyTabCompleter implements TabCompleter {
             suggestions.add("deposit");
             suggestions.add("sell");
             suggestions.add("buy");
+            suggestions.add("transactions");
         }
 
         else if (args.length == 2 && "pay".equalsIgnoreCase(args[0])) {
@@ -38,6 +39,13 @@ public class EconomyTabCompleter implements TabCompleter {
                 suggestions.add(player.getName());
             }
         }
+
+        else if (args.length == 2 && "balance".equalsIgnoreCase(args[0])) {
+            for (Player player : sender.getServer().getOnlinePlayers()) {
+                suggestions.add(player.getName());
+            }
+        }
+
 
         else if (args.length == 2 && "sell".equalsIgnoreCase(args[0])) {
             Player player = (Player) sender;
