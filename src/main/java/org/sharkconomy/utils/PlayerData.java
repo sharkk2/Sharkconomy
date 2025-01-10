@@ -5,13 +5,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.sharkconomy.sharkEconomy;
 import org.bukkit.Sound;
-
+import java.util.Random;
 import java.io.*;
 import java.util.*;
 
 public class PlayerData {
     private static final File dataFile = new File(sharkEconomy.getInstance().getServer().getWorldContainer(), "sharkeconomy.json");
     private static JsonObject data = loadData();
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     private static JsonObject loadData() {
         if (!dataFile.exists()) {
@@ -39,8 +40,9 @@ public class PlayerData {
 
     private static void saveData(UUID playerUUID, JsonObject playerData) {
         data.add(playerUUID.toString(), playerData);
+
         try (FileWriter writer = new FileWriter(dataFile)) {
-            new Gson().toJson(data, writer);
+            gson.toJson(data, writer);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -60,12 +62,102 @@ public class PlayerData {
             dailyData.addProperty("last_daily", System.currentTimeMillis());
             dailyData.addProperty("extra", 0);
             playerData.add("daily", dailyData);
+            playerData.add("transactions", new JsonArray());
 
             saveData(playerUUID, playerData);
             return playerData;
         }
         return data.getAsJsonObject(playerUUID.toString());
     }
+
+    private static final long TIME_THRESHOLD = 60 * 1000;
+    public static void registerTransaction(UUID fromPlayer, UUID toPlayer, double amount, String reason) {
+        JsonObject toPlayerData = getPlayerData(toPlayer);
+        JsonObject fromPlayerData = getPlayerData(fromPlayer);
+        JsonArray toTransactions = toPlayerData.getAsJsonArray("transactions");
+        JsonArray fromTransactions = fromPlayerData.getAsJsonArray("transactions");
+
+        long currentTime = System.currentTimeMillis();
+        boolean merged = false;
+
+        for (JsonElement element : toTransactions) {
+            JsonObject transaction = element.getAsJsonObject();
+            UUID existingFromPlayer = UUID.fromString(transaction.get("fromPlayer").getAsString());
+            String existingReason = transaction.get("reason").getAsString();
+            long existingDate = transaction.get("date").getAsLong();
+
+            if (existingFromPlayer.equals(fromPlayer) &&
+                    existingReason.equals(reason) &&
+                    (currentTime - existingDate) <= TIME_THRESHOLD) {
+
+                double existingAmount = transaction.get("amount").getAsDouble();
+                transaction.addProperty("amount", existingAmount + amount);
+                transaction.addProperty("date", currentTime);
+                merged = true;
+                break;
+            }
+        }
+
+        for (JsonElement element : fromTransactions) {
+            JsonObject transaction = element.getAsJsonObject();
+            UUID existingToPlayer = UUID.fromString(transaction.get("toPlayer").getAsString());
+            String existingReason = transaction.get("reason").getAsString();
+            long existingDate = transaction.get("date").getAsLong();
+
+            if (existingToPlayer.equals(toPlayer) &&
+                    existingReason.equals(reason) &&
+                    (currentTime - existingDate) <= TIME_THRESHOLD) {
+
+                double existingAmount = transaction.get("amount").getAsDouble();
+                transaction.addProperty("amount", existingAmount + amount);
+                transaction.addProperty("date", currentTime);
+                merged = true;
+                break;
+            }
+        }
+
+        if (!merged) {
+            JsonObject toTransaction = new JsonObject();
+            Random random = new Random();
+            int id = random.nextInt(1000) + 1;
+            toTransaction.addProperty("fromPlayer", fromPlayer.toString());
+            toTransaction.addProperty("toPlayer", fromPlayer.toString());
+            toTransaction.addProperty("amount", amount);
+            toTransaction.addProperty("reason", reason);
+            toTransaction.addProperty("date", currentTime);
+            toTransaction.addProperty("type", 1);
+            toTransaction.addProperty("id", id);
+            toTransactions.add(toTransaction);
+
+            JsonObject fromTransaction = new JsonObject();
+            fromTransaction.addProperty("toPlayer", toPlayer.toString());
+            fromTransaction.addProperty("fromPlayer", toPlayer.toString());
+            fromTransaction.addProperty("amount", amount);
+            fromTransaction.addProperty("reason", reason);
+            fromTransaction.addProperty("date", currentTime);
+            fromTransaction.addProperty("type", 0);
+            fromTransaction.addProperty("id", id);
+            fromTransactions.add(fromTransaction);
+        }
+
+        saveData(toPlayer, toPlayerData);
+        saveData(fromPlayer, fromPlayerData);
+    }
+
+
+
+    public static List<JsonObject> getTransactions(UUID playerUUID) {
+        JsonObject playerData = getPlayerData(playerUUID);
+        JsonArray transactions = playerData.getAsJsonArray("transactions");
+        List<JsonObject> allTransactions = new ArrayList<>();
+
+        for (int i = 0; i < transactions.size(); i++) {
+            allTransactions.add(transactions.get(i).getAsJsonObject());
+        }
+
+        return allTransactions;
+    }
+
 
     public static double getBalance(UUID playerUUID) {
         JsonObject playerData = getPlayerData(playerUUID);
@@ -170,7 +262,7 @@ public class PlayerData {
             JsonObject itemData = shop.getAsJsonObject(itemName);
             int currentQuantity = itemData.get("quantity").getAsInt();
 
-            itemData.addProperty("quantity", currentQuantity + quantity);  // Decrease the quantity
+            itemData.addProperty("quantity", currentQuantity + quantity);
             saveData(playerUUID, playerData);
             return true;
         } else {
