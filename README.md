@@ -10,3 +10,4 @@ A simple lightweight 1.21.1 paper plugin for an economy system with the followin
 6. /economy leaderboard
 7. /economy sell
 8. /economy buy
+9. /economy transactions
