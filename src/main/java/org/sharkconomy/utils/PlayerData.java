@@ -289,7 +289,7 @@ public class PlayerData {
 
     public static boolean giveStartingBalance(Player player) {
         if (isFirstTime(player.getUniqueId())) {
-            int start = 100;
+            int start = 80;
             setBalance(player.getUniqueId(), start);
             player.sendMessage("§l§2Welcome to SharkSMP S3!!§r §8§7Your current bank balance is §6§l" + start + "SC (sharcoins)§r§7\n" +
                     "Spend them wisely, You can do services for players, sell items, etc for more SC.\n" +
