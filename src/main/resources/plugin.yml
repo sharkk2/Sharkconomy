@@ -1,5 +1,5 @@
 name: SharkEconomy
-version: '1.0'
+version: '1.4'
 main: org.sharkconomy.sharkEconomy
 api-version: '1.21'
 commands:
